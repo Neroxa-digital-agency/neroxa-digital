@@ -5511,3 +5511,11 @@ button {
     transition-duration: .25s;
   }
 }
+
+/* NEROXA LOADER — REMOVE BLACK VIDEO BOX */
+
+.loader-logo-video {
+  background: transparent !important;
+  mix-blend-mode: screen;
+}
+
