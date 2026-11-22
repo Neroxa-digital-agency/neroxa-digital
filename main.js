@@ -1,3 +1,4 @@
+
 gsap.registerPlugin(ScrollTrigger);
 
 /* =========================================================
@@ -549,6 +550,8 @@ gsap.from(".work-header p", {
 
   delay: 0.15,
 
+  ease: "power3.out",
+
   scrollTrigger: {
     trigger: ".work-header",
 
@@ -911,6 +914,8 @@ window.addEventListener("load", () => {
   ScrollTrigger.refresh();
 
 });
+
+
 /* =========================================================
    HEADER SCROLL BLUR
 ========================================================= */
@@ -928,68 +933,93 @@ if (siteHeader) {
     passive: true
   });
 }
+
+
 /* =========================================================
-   PAGE LOADER
-========================================================= */
-
-(() => {
-
-  const loader = document.querySelector(".page-loader");
-  const line = document.querySelector(".loader-line span");
-  const percent = document.querySelector(".loader-percent");
-
-  if (!loader || !line || !percent) return;
-
-  let progress = 0;
-
-  const interval = setInterval(() => {
-
-    progress += Math.floor(Math.random() * 8) + 2;
-
-    if (progress >= 100) {
-      progress = 100;
-      clearInterval(interval);
-
-      line.style.width = "100%";
-      percent.textContent = "100%";
-
-      setTimeout(() => {
-        loader.classList.add("is-loaded");
-      }, 350);
-
-      return;
-    }
-
-    line.style.width = `${progress}%`;
-    percent.textContent = `${progress}%`;
-
-  }, 70);
-
-})();
-/* =========================================================
-   NEROXA TYPOGRAPHY INTRO
+   NEROXA 3D LOGO VIDEO INTRO
 ========================================================= */
 
 (() => {
   const loader = document.querySelector(".page-loader");
+  const logoVideo = document.querySelector(".loader-logo-video");
 
-  if (!loader) return;
-
-  const revealLoader = () => {
-    setTimeout(() => {
-      loader.classList.add("is-loaded");
-
-      setTimeout(() => {
-        loader.remove();
-      }, 1100);
-
-    }, 1450);
-  };
-
-  if (document.readyState === "complete") {
-    revealLoader();
-  } else {
-    window.addEventListener("load", revealLoader, { once: true });
+  if (!loader) {
+    document.body.classList.remove("loading");
+    return;
   }
 
+  let closed = false;
+  let fallbackTimer;
+
+  const closeLoader = () => {
+    if (closed) return;
+    closed = true;
+    window.clearTimeout(fallbackTimer);
+
+    loader.classList.add("is-loaded");
+    document.body.classList.remove("loading");
+
+    window.setTimeout(() => loader.remove(), 1050);
+  };
+
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    closeLoader();
+    return;
+  }
+
+  if (logoVideo) {
+    logoVideo.addEventListener("ended", closeLoader, { once: true });
+    logoVideo.addEventListener("error", closeLoader, { once: true });
+
+    const playAttempt = logoVideo.play();
+    if (playAttempt && typeof playAttempt.catch === "function") {
+      playAttempt.catch(closeLoader);
+    }
+  } else {
+    closeLoader();
+    return;
+  }
+
+  // Fallback prevents a failed or stalled video from trapping the visitor.
+  fallbackTimer = window.setTimeout(closeLoader, 10500);
+})();
+
+
+/* =========================================================
+   BRAND FILM SOUND CONTROL
+========================================================= */
+
+(() => {
+  const video = document.querySelector(".brand-film-video");
+  const button = document.querySelector(".brand-film-sound");
+  const label = document.querySelector(".sound-state");
+
+  if (!video || !button) return;
+
+  button.addEventListener("click", () => {
+    video.muted = !video.muted;
+
+    button.setAttribute("aria-pressed", String(!video.muted));
+    button.setAttribute(
+      "aria-label",
+      video.muted ? "Turn sound on" : "Turn sound off"
+    );
+
+    if (label) {
+      label.textContent = video.muted ? "SOUND OFF" : "SOUND ON";
+    }
+
+    const symbol = button.querySelector("[aria-hidden='true']");
+    if (symbol) symbol.textContent = video.muted ? "＋" : "−";
+
+    if (!video.muted) {
+      video.play().catch(() => {
+        video.muted = true;
+        button.setAttribute("aria-pressed", "false");
+        button.setAttribute("aria-label", "Turn sound on");
+        if (label) label.textContent = "SOUND OFF";
+        if (symbol) symbol.textContent = "＋";
+      });
+    }
+  });
 })();
